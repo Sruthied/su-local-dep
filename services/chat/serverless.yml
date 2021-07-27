@@ -1,0 +1,44 @@
+service:
+  name: websocket-chat
+
+provider:
+  name: aws
+  stage: ${opt:stage}
+  runtime: python3.7
+  region: us-east-1
+  websocketApiRouteSelectionExpression: $request.body.routeKey
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "execute-api:ManageConnections"
+      Resource:
+        - "arn:aws:execute-api:*:*:**/@connections/*"
+
+package:
+  exclude:
+    - node_modules/**
+    - package-lock.json
+    - __pycache__/**
+    - .serverless/**
+    - .vscode/**
+    - venv/**
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: false
+
+functions:
+  connectionHandler:
+    handler: lambda_handler.lambda_handler
+    events:
+      - websocket:
+          route: $connect
+      - websocket:
+          route: $disconnect
+      - websocket:
+        route: sendmessage
+      - websocket:
+          route: $default
